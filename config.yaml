@@ -1,0 +1,39 @@
+# Обозначение задачи
+data_task_name:
+  name: "texts"
+
+# Конфигурация проекта прогнозирования стоимости недвижимости
+data:
+  # Источник данных (kaggle или fallback URL)
+  path: "data/texts/review.csv"
+  text_column: "review"
+  target_column: "sentiment"
+  test_size: 0.2
+  random_state: 42
+
+vectorizer:
+  max_features: 20000
+  ngram_range: [1, 2]
+  min_df: 5
+  stop_words: "english"
+
+model:
+  params:
+    C: 1.0
+    max_iter: 2000
+    random_state: 42
+
+paths:
+  model: "models/model.pkl"
+  vectorizer: "models/vectorizer.pkl"
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  reload: false
+  title: "Sentiment Classification API"
+  version: "1.0.0"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

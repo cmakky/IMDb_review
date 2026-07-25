@@ -1,0 +1,75 @@
+on:
+  push:
+    - workflows: [ci]
+      filter:
+        branches: ["main"]
+
+workflows:
+  ci:
+    tasks:
+        # 1. Проверка структуры репозитория
+      - name: structure-test
+        cubes:
+          - name: check-repo-structure
+            image: docker.io/library/python:3.10
+            script:
+              - echo "Checking notebook name..."
+
+              - |
+                if ls notebooks/Project_*.ipynb 1> /dev/null 2>&1; then
+                  echo "Notebook name passed"
+                else
+                  echo "ERROR: Notebook must be named Project_Фамилия.ipynb"
+                  exit 1
+                fi
+
+              - echo "Checking model file..."
+
+              - |
+                if [ -f models/model.pkl ]; then
+                  echo "Model file exists"
+                else
+                  echo "ERROR: models/model.pkl not found"
+                  exit 1
+                fi
+
+              - echo "Structure check passed"
+
+       # 2. Проверка кода (импорты, запреты библиотек)
+      - name: code-check
+        cubes:
+          - name: forbid-deep-learning
+            image: python:3.10
+            script:
+              - echo "Checking forbidden libs..."
+              - if grep -RE "^\s*(import|from)\s+(torch|tensorflow|keras)" src/ notebooks/ tests/ 2>/dev/null; then exit 1; fi
+              - echo "No forbidden libs found"
+
+        # 3. Запуск тестов
+      - name: unit-tests
+        cubes:
+          - name: pytest-run
+            image: python:3.10
+            script:
+              - pip install -r requirements.txt
+              - pytest -q
+
+      # 4. ML pipeline (обучение + проверка модели)
+      - name: ml-eval
+        cubes:
+          - name: train
+            image: python:3.10
+            script:
+              - pip install -r requirements.txt
+              - python -m src.train
+
+          - name: evaluate
+            image: python:3.10
+            script:
+              - pip install -r requirements.txt
+              - python tests/evaluate.py
+
+
+
+
+...
